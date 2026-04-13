@@ -1,0 +1,116 @@
+@import './styles/vars.css';
+@import './styles/landing.css';
+
+@font-face {
+  font-family: 'Involve';
+  src: url('./assets/fonts/Involve-VF.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  В макете заданы имена Involve-Regular / Medium / SemiBold — это один VF, грузим как Involve.
+  Перекрываем семейство у корня вёрстки, жирность остаётся из правил landing.css (font-weight).
+*/
+.frame-427318908,
+.frame-427318908 * {
+  font-family: 'Involve', system-ui, sans-serif !important;
+}
+
+:root {
+  --landing-scale: calc(100vw / 1920);
+}
+
+html {
+  font-family: 'Involve', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+a,
+button,
+input,
+select,
+h1,
+h2,
+h3,
+h4,
+h5,
+* {
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-decoration: none;
+  background: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+menu,
+ol,
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+  max-width: none;
+  overflow-x: clip;
+  font-family: 'Involve', system-ui, sans-serif;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  width: 100%;
+  max-width: none;
+  display: block;
+}
+
+.landing-viewport {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+/* Макет 1920×10587; равномерный scale — без искажений, ширина = innerWidth */
+.landing-scale-outer {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(10587px * var(--landing-scale));
+  overflow: hidden;
+}
+
+.landing-scale-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: 1920px;
+  height: 10587px;
+  transform: scale(var(--landing-scale));
+  transform-origin: top left;
+  will-change: transform;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
