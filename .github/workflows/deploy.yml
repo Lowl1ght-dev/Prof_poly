@@ -1,0 +1,27 @@
+name: Deploy to Beget
+on:
+  push:
+    branches:
+      - main  # Если твоя главная ветка называется master, замени main на master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
+
+      - name: Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+
+          local-dir: ./dist/  # Если после сборки папка называется build, исправь на ./build/
+          server-dir: /
