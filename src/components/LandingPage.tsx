@@ -24,6 +24,31 @@ import { ImageSlider } from './ImageSlider'
 
 const DESIGN_W = 1920
 
+/** Куда слать заявки: на Beget в `public_html/api/lead.php` → путь `/api/lead.php`; с localhost — полный URL в `.env` */
+const LEAD_ENDPOINT =
+  (import.meta.env.VITE_LEAD_ENDPOINT as string | undefined)?.trim() || '/api/lead.php'
+
+async function postLeadToServer(payload: { name: string; phone: string; message: string }) {
+  const res = await fetch(LEAD_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+  let data: { ok?: boolean; error?: string } = {}
+  try {
+    data = (await res.json()) as { ok?: boolean; error?: string }
+  } catch {
+    // не JSON
+  }
+  if (!res.ok || !data.ok) {
+    const msg = data.error ?? `Ошибка ${res.status}`
+    throw new Error(msg)
+  }
+}
+
 function syncLandingScale() {
   const w = window.visualViewport?.width ?? window.innerWidth
   // На части масштабов 1920×scale чуть уже вьюпорта — просвечивает белый фон (полоска у края, заметна на жёлтом).
@@ -152,9 +177,12 @@ export function LandingPage() {
   const [isHeaderScrolling, setIsHeaderScrolling] = useState(false)
   const [isContactConsentChecked, setIsContactConsentChecked] = useState(false)
   const [isLeadConsentChecked, setIsLeadConsentChecked] = useState(false)
+  const [contactEmailValue, setContactEmailValue] = useState('')
+  const [contactMessageValue, setContactMessageValue] = useState('')
   const [leadNameValue, setLeadNameValue] = useState('')
   const [leadPhoneValue, setLeadPhoneValue] = useState('')
   const [leadMessageValue, setLeadMessageValue] = useState('')
+  const [isLeadSending, setIsLeadSending] = useState(false)
   const scrollIdleTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
   const workTypesSectionRef = useRef<HTMLDivElement | null>(null)
   const [isWorkTypesVisible, setIsWorkTypesVisible] = useState(false)
@@ -1120,7 +1148,35 @@ export function LandingPage() {
         <form
           id="contact-form"
           className="contact-form"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={async (e) => {
+            e.preventDefault()
+            const name = nameValue.trim()
+            const phone = phoneValue.trim()
+            const digits = phone.replace(/\D/g, '')
+            if (!name || digits.length < 11) {
+              window.alert('Укажите имя и полный номер телефона.')
+              return
+            }
+            let message = contactMessageValue.trim()
+            const email = contactEmailValue.trim()
+            if (email) {
+              message = message ? `${message}\n\nEmail: ${email}` : `Email: ${email}`
+            }
+            setIsLeadSending(true)
+            try {
+              await postLeadToServer({ name, phone, message })
+              window.alert('Заявка отправлена. Мы свяжемся с вами.')
+              setNameValue('')
+              setPhoneValue('')
+              setContactEmailValue('')
+              setContactMessageValue('')
+              setIsContactConsentChecked(false)
+            } catch (err) {
+              window.alert(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+            } finally {
+              setIsLeadSending(false)
+            }
+          }}
         >
           <div className="contact-form__left">
             <div className="contact-form__field">
@@ -1177,6 +1233,8 @@ export function LandingPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                value={contactEmailValue}
+                onChange={(e) => setContactEmailValue(e.target.value)}
                 placeholder="mail@mail.ru"
               />
             </div>
@@ -1191,6 +1249,8 @@ export function LandingPage() {
                 name="message"
                 placeholder="Ваш вопрос"
                 rows={8}
+                value={contactMessageValue}
+                onChange={(e) => setContactMessageValue(e.target.value)}
               />
             </div>
           </div>
@@ -1199,7 +1259,7 @@ export function LandingPage() {
           type="submit"
           form="contact-form"
           className="rectangle-18 contact-form__submit cta-button cta-button--footer"
-          disabled={!isContactConsentChecked}
+          disabled={!isContactConsentChecked || isLeadSending}
         >
           <span className="div36">Записаться на бесплатный замер</span>
         </button>
@@ -1605,9 +1665,30 @@ export function LandingPage() {
 
             <form
               className="lead-modal__form"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault()
-                setIsLeadModalOpen(false)
+                const name = leadNameValue.trim()
+                const phone = leadPhoneValue.trim()
+                const digits = phone.replace(/\D/g, '')
+                if (!name || digits.length < 11) {
+                  window.alert('Укажите имя и полный номер телефона.')
+                  return
+                }
+                const message = leadMessageValue.trim()
+                setIsLeadSending(true)
+                try {
+                  await postLeadToServer({ name, phone, message })
+                  window.alert('Заявка отправлена. Мы свяжемся с вами.')
+                  setIsLeadModalOpen(false)
+                  setLeadNameValue('')
+                  setLeadPhoneValue('')
+                  setLeadMessageValue('')
+                  setIsLeadConsentChecked(false)
+                } catch (err) {
+                  window.alert(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+                } finally {
+                  setIsLeadSending(false)
+                }
               }}
             >
               <label className="lead-modal__field">
@@ -1662,7 +1743,7 @@ export function LandingPage() {
               <button
                 type="submit"
                 className="lead-modal__submit cta-button cta-button--header"
-                disabled={!isLeadConsentChecked}
+                disabled={!isLeadConsentChecked || isLeadSending}
               >
                 Отправить заявку
               </button>
