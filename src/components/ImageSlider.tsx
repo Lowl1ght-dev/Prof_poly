@@ -22,7 +22,10 @@ export function ImageSlider({
   const [position, setPosition] = useState(50)
 
   return (
-    <div className="before-after-slider">
+    <div
+      className="before-after-slider"
+      style={{ ['--ba-pos' as any]: `${position}%` }}
+    >
       <img
         src={after}
         alt=""
@@ -50,6 +53,9 @@ export function ImageSlider({
           <div className="before-after-slider__before-sub">{beforeSubtitle}</div>
         </div>
       </div>
+
+      <div className="before-after-slider__grain" aria-hidden />
+      <div className="before-after-slider__grain before-after-slider__grain--after" aria-hidden />
 
       <input
         type="range"

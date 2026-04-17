@@ -19,7 +19,8 @@
 }
 
 :root {
-  --landing-scale: calc(100vw / 1920);
+  /* Fallback до JS; в рантайме LandingPage задаёт чуть больший scale — без субпиксельной щели у края */
+  --landing-scale: calc((100vw + 1px) / 1920);
 }
 
 html {
@@ -87,12 +88,12 @@ body {
   background: #ffffff;
 }
 
-/* Макет 1920×10587; равномерный scale — без искажений, ширина = innerWidth */
+/* Макет 1920×10371 — низ совпадает с концом блока футера (.rectangle-8: 9996+375), без лишнего белого поля */
 .landing-scale-outer {
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  height: calc(10587px * var(--landing-scale));
+  height: calc(10371px * var(--landing-scale));
   overflow: hidden;
 }
 
@@ -102,7 +103,7 @@ body {
   left: 0;
   box-sizing: border-box;
   width: 1920px;
-  height: 10587px;
+  height: 10362px;
   transform: scale(var(--landing-scale));
   transform-origin: top left;
   will-change: transform;
