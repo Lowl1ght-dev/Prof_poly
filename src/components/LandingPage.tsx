@@ -183,6 +183,26 @@ export function LandingPage() {
   const [leadPhoneValue, setLeadPhoneValue] = useState('')
   const [leadMessageValue, setLeadMessageValue] = useState('')
   const [isLeadSending, setIsLeadSending] = useState(false)
+  const [leadToast, setLeadToast] = useState<{ open: boolean; tone: 'success' | 'error'; text: string }>({
+    open: false,
+    tone: 'success',
+    text: '',
+  })
+  const leadToastTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
+
+  const showLeadToast = useCallback((tone: 'success' | 'error', text: string) => {
+    if (leadToastTimeoutRef.current) window.clearTimeout(leadToastTimeoutRef.current)
+    setLeadToast({ open: true, tone, text })
+    leadToastTimeoutRef.current = window.setTimeout(() => {
+      setLeadToast((prev) => (prev.open ? { ...prev, open: false } : prev))
+    }, 3200)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (leadToastTimeoutRef.current) window.clearTimeout(leadToastTimeoutRef.current)
+    }
+  }, [])
   const scrollIdleTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
   const workTypesSectionRef = useRef<HTMLDivElement | null>(null)
   const [isWorkTypesVisible, setIsWorkTypesVisible] = useState(false)
@@ -1154,7 +1174,7 @@ export function LandingPage() {
             const phone = phoneValue.trim()
             const digits = phone.replace(/\D/g, '')
             if (!name || digits.length < 11) {
-              window.alert('Укажите имя и полный номер телефона.')
+              showLeadToast('error', 'Укажите имя и полный номер телефона.')
               return
             }
             let message = contactMessageValue.trim()
@@ -1165,14 +1185,14 @@ export function LandingPage() {
             setIsLeadSending(true)
             try {
               await postLeadToServer({ name, phone, message })
-              window.alert('Заявка отправлена. Мы свяжемся с вами.')
+              showLeadToast('success', 'Заявка отправлена. Мы свяжемся с вами.')
               setNameValue('')
               setPhoneValue('')
               setContactEmailValue('')
               setContactMessageValue('')
               setIsContactConsentChecked(false)
             } catch (err) {
-              window.alert(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+              showLeadToast('error', err instanceof Error ? err.message : 'Не удалось отправить заявку.')
             } finally {
               setIsLeadSending(false)
             }
@@ -1671,21 +1691,21 @@ export function LandingPage() {
                 const phone = leadPhoneValue.trim()
                 const digits = phone.replace(/\D/g, '')
                 if (!name || digits.length < 11) {
-                  window.alert('Укажите имя и полный номер телефона.')
+                  showLeadToast('error', 'Укажите имя и полный номер телефона.')
                   return
                 }
                 const message = leadMessageValue.trim()
                 setIsLeadSending(true)
                 try {
                   await postLeadToServer({ name, phone, message })
-                  window.alert('Заявка отправлена. Мы свяжемся с вами.')
+                  showLeadToast('success', 'Заявка отправлена. Мы свяжемся с вами.')
                   setIsLeadModalOpen(false)
                   setLeadNameValue('')
                   setLeadPhoneValue('')
                   setLeadMessageValue('')
                   setIsLeadConsentChecked(false)
                 } catch (err) {
-                  window.alert(err instanceof Error ? err.message : 'Не удалось отправить заявку.')
+                  showLeadToast('error', err instanceof Error ? err.message : 'Не удалось отправить заявку.')
                 } finally {
                   setIsLeadSending(false)
                 }
@@ -1906,6 +1926,28 @@ export function LandingPage() {
           </div>
         </div>
       </div>)}
+
+      <div
+        className={`lead-toast${leadToast.open ? ' lead-toast--open' : ''}${
+          leadToast.tone === 'error' ? ' lead-toast--error' : ''
+        }`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <div className="lead-toast__inner">
+          <div className="lead-toast__title">{leadToast.tone === 'error' ? 'Не отправлено' : 'Готово'}</div>
+          <div className="lead-toast__text">{leadToast.text}</div>
+        </div>
+        <button
+          type="button"
+          className="lead-toast__close"
+          aria-label="Закрыть уведомление"
+          onClick={() => setLeadToast((prev) => ({ ...prev, open: false }))}
+        >
+          ×
+        </button>
+      </div>
     </div>
   )
 }
